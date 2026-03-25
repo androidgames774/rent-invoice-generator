@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Invoice</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      color: #222;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 24px auto;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 24px;
+    }
+    .panel, .preview {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+      padding: 20px;
+    }
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 20px 0 10px;
+      color: #555;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 6px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #cfd6dd;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 12px;
+      background: #fff;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 72px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .primary { background: #1f2937; color: white; }
+    .secondary { background: #e5e7eb; color: #111827; }
+    .preview-wrap {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      padding: 28px;
+      border-radius: 10px;
+    }
+    .invoice {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 40px;
+      color: #111;
+      
+    }
+    .invoice-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: flex-start;
+      margin-bottom: 28px;
+    }
+    .invoice-title {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+    .muted {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .block {
+      margin-bottom: 22px;
+    }
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      margin-bottom: 24px;
+    }
+    .block h3 {
+      font-size: 14px;
+      text-transform: uppercase;
+      color: #444;
+      margin-bottom: 8px;
+      letter-spacing: 0.4px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+    }
+    th, td {
+      padding: 12px 10px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+      font-size: 14px;
+    }
+    th:last-child, td:last-child {
+      text-align: right;
+    }
+    .totals {
+      width: 320px;
+      margin-left: auto;
+      margin-top: 20px;
+    }
+    .totals-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 14px;
+    }
+    .totals-row.final {
+      font-size: 18px;
+      font-weight: 800;
+      border-bottom: 2px solid #111;
+    }
+    .footer-note {
+      margin-top: 32px;
+      padding-top: 16px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 14px;
+      color: #444;
+      line-height: 1.7;
+      white-space: pre-line;
+    }
+    @media print {
+      @page { margin: 0; }
+      body { margin: 0; background: white; }
+      .container {
+        display: block;
+        margin: 0;
+        padding: 0;
+      }
+      .panel { display: none; }
+      .preview {
+        box-shadow: none;
+        padding: 0;
+      }
+      .preview-wrap {
+        border: none;
+        padding: 0;
+        background: white;
+      }
+      .invoice {
+        max-width: 100%;
+        box-shadow: none;
+        padding: 40px;
+      }
+    }
+    @media (max-width: 960px) {
+      .container { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .row, .two-col, .invoice-header {
+        grid-template-columns: 1fr;
+        display: grid;
+      }
+      .invoice { padding: 22px; }
+      .totals { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="panel">
+      <div class="section-title">Tenant Preset</div>
+      <label for="tenantSelect">Select Tenant</label>
+      <select id="tenantSelect"></select>
+
+      <div class="section-title">Landlord Details</div>
+      <label for="landlordName">Landlord Name</label>
+      <input id="landlordName" value="C. H. E. Yaparathne" />
+
+      <label for="landlordAddress">Landlord Address</label>
+      <textarea id="landlordAddress">[Your address here]</textarea>
+
+      <label for="landlordPhone">Contact</label>
+      <input id="landlordPhone" value="[Phone number]" />
+
+      <div class="section-title">Tenant Details</div>
+      <label for="tenantName">Tenant Name</label>
+      <input id="tenantName" value="[Tenant / Company Name]" />
+
+      <label for="tenantAddress">Tenant Address</label>
+      <textarea id="tenantAddress">[Tenant address]</textarea>
+
+      <div class="section-title">Invoice Details</div>
+      <div class="row">
+        <div>
+          <label for="invoiceNo">Invoice No</label>
+          <input id="invoiceNo" value="INV-2026-03-001" />
+        </div>
+        <div>
+          <label for="invoiceDate">Invoice Date</label>
+          <input id="invoiceDate" type="date" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="billingPeriod">Billing Period</label>
+          <input id="billingPeriod" value="March 2026" />
+        </div>
+        <div>
+          <label for="dueDate">Due Date</label>
+          <input id="dueDate" type="date" />
+        </div>
+      </div>
+
+      <div class="section-title">Invoice Item</div>
+      <label for="description">Description</label>
+      <input id="description" value="Monthly Rent - 2nd Floor" />
+
+      <div class="row">
+        <div>
+          <label for="amount">Amount (LKR)</label>
+          <input id="amount" type="number" value="250000" />
+        </div>
+        <div>
+          <label for="currency">Currency Label</label>
+          <input id="currency" value="LKR" />
+        </div>
+      </div>
+
+      <div class="section-title">Payment Details</div>
+      <label for="accountName">Account Name</label>
+      <input id="accountName" value="C. H. E. Yaparathne" />
+
+      <label for="bankName">Bank</label>
+      <input id="bankName" value="[Bank name]" />
+
+      <label for="accountNo">Account Number</label>
+      <input id="accountNo" value="[Account number]" />
+
+      <div class="section-title">Notes</div>
+      <label for="note">Note</label>
+      <textarea id="note">Kindly make the payment on or before the due date.</textarea>
+
+      <div class="btn-row">
+        <button class="primary" onclick="window.print()">Print / Save PDF</button>
+        <button class="secondary" onclick="resetDefaults()">Reset</button>
+      </div>
+    </div>
+
+    <div class="preview">
+      <div class="preview-wrap">
+        <div class="invoice" id="invoiceArea">
+          <div class="invoice-header">
+            <div>
+              <div class="invoice-title">INVOICE</div>
+              <div class="muted" id="fromBlock"></div>
+            </div>
+            <div class="muted" id="invoiceMeta"></div>
+          </div>
+
+          <div class="two-col">
+            <div class="block">
+              <h3>Bill To</h3>
+              <div class="muted" id="toBlock"></div>
+            </div>
+            <div class="block">
+              <h3>Payment To</h3>
+              <div class="muted" id="paymentBlock"></div>
+            </div>
+          </div>
+
+          <div class="block">
+            <table>
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td id="itemDescription"></td>
+                  <td id="itemAmount"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="totals">
+            <div class="totals-row">
+              <span>Subtotal</span>
+              <span id="subtotal"></span>
+            </div>
+            <div class="totals-row final">
+              <span>Total</span>
+              <span id="total"></span>
+            </div>
+          </div>
+
+          <div class="footer-note" id="footerNote"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const tenants = [
+      {
+        label: 'Custom / Manual Entry',
+        tenantName: '',
+        tenantAddress: '',
+        description: '',
+        amount: ''
+      },
+      {
+        label: 'W.I.S Accountancy',
+        tenantName: 'W.I.S Accountancy',
+        tenantAddress: 'Kandy',
+        description: 'Monthly Rent - 2nd Floor',
+        amount: 250000
+      },
+      {
+        label: 'Nils Clothing',
+        tenantName: 'Nils Clothing',
+        tenantAddress: 'Kandy',
+        description: 'Monthly Rent - Ground + 1st Floor',
+        amount: 255000
+      }
+    ];
+
+    const fields = [
+      'landlordName','landlordAddress','landlordPhone','tenantName','tenantAddress',
+      'invoiceNo','invoiceDate','billingPeriod','dueDate','description','amount','currency',
+      'accountName','bankName','accountNo','note'
+    ];
+
+    const defaultValues = {};
+    fields.forEach(id => {
+      const el = document.getElementById(id);
+      defaultValues[id] = el.value;
+      el.addEventListener('input', renderInvoice);
+    });
+
+    const tenantSelect = document.getElementById('tenantSelect');
+    tenants.forEach((tenant, index) => {
+      const option = document.createElement('option');
+      option.value = index;
+      option.textContent = tenant.label;
+      tenantSelect.appendChild(option);
+    });
+
+    tenantSelect.addEventListener('change', () => {
+      applyTenantPreset(Number(tenantSelect.value));
+    });
+
+    function applyTenantPreset(index) {
+      const tenant = tenants[index];
+      if (!tenant) return;
+      document.getElementById('tenantName').value = tenant.tenantName || '';
+      document.getElementById('tenantAddress').value = tenant.tenantAddress || '';
+      document.getElementById('description').value = tenant.description || '';
+      document.getElementById('amount').value = tenant.amount || '';
+      renderInvoice();
+    }
+
+    function formatDate(value) {
+      if (!value) return '-';
+      const date = new Date(value + 'T00:00:00');
+      return date.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      });
+    }
+
+    function formatMoney(value, currency) {
+      const amount = Number(value || 0);
+      return `${currency} ${amount.toLocaleString('en-LK', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })}`;
+    }
+
+    function linesToHtml(text) {
+      return (text || '').replace(/\n/g, '<br>');
+    }
+
+    function renderInvoice() {
+      const landlordName = document.getElementById('landlordName').value;
+      const landlordAddress = document.getElementById('landlordAddress').value;
+      const landlordPhone = document.getElementById('landlordPhone').value;
+      const tenantName = document.getElementById('tenantName').value;
+      const tenantAddress = document.getElementById('tenantAddress').value;
+      const invoiceNo = document.getElementById('invoiceNo').value;
+      const invoiceDate = document.getElementById('invoiceDate').value;
+      const billingPeriod = document.getElementById('billingPeriod').value;
+      const dueDate = document.getElementById('dueDate').value;
+      const description = document.getElementById('description').value;
+      const amount = document.getElementById('amount').value;
+      const currency = document.getElementById('currency').value || 'LKR';
+      const accountName = document.getElementById('accountName').value;
+      const bankName = document.getElementById('bankName').value;
+      const accountNo = document.getElementById('accountNo').value;
+      const note = document.getElementById('note').value;
+
+      document.getElementById('fromBlock').innerHTML = `
+        <strong>${landlordName}</strong><br>
+        ${linesToHtml(landlordAddress)}<br>
+        Contact: ${landlordPhone}
+      `;
+
+      document.getElementById('invoiceMeta').innerHTML = `
+        <strong>Invoice No:</strong> ${invoiceNo}<br>
+        <strong>Invoice Date:</strong> ${formatDate(invoiceDate)}<br>
+        <strong>Billing Period:</strong> ${billingPeriod}<br>
+        <strong>Due Date:</strong> ${formatDate(dueDate)}
+      `;
+
+      document.getElementById('toBlock').innerHTML = `
+        <strong>${tenantName}</strong><br>
+        ${linesToHtml(tenantAddress)}
+      `;
+
+      document.getElementById('paymentBlock').innerHTML = `
+        <strong>${accountName}</strong><br>
+        ${bankName}<br>
+        A/C No: ${accountNo}
+      `;
+
+      document.getElementById('itemDescription').textContent = description;
+      document.getElementById('itemAmount').textContent = formatMoney(amount, currency);
+      document.getElementById('subtotal').textContent = formatMoney(amount, currency);
+      document.getElementById('total').textContent = formatMoney(amount, currency);
+      document.getElementById('footerNote').textContent = note;
+    }
+
+    function resetDefaults() {
+      fields.forEach(id => {
+        document.getElementById(id).value = defaultValues[id];
+      });
+      tenantSelect.value = '0';
+      renderInvoice();
+    }
+
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    document.getElementById('invoiceDate').value = `${yyyy}-${mm}-${dd}`;
+
+    const due = new Date(today);
+    due.setDate(today.getDate() + 14);
+    const dueY = due.getFullYear();
+    const dueM = String(due.getMonth() + 1).padStart(2, '0');
+    const dueD = String(due.getDate()).padStart(2, '0');
+    document.getElementById('dueDate').value = `${dueY}-${dueM}-${dueD}`;
+
+    tenantSelect.value = '0';
+    renderInvoice();
+  </script>
+</body>
+</html>
