@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Invoice</title>
+  <title>Invoice Generator</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -89,7 +89,6 @@
       background: white;
       padding: 40px;
       color: #111;
-      
     }
     .invoice-header {
       display: flex;
@@ -250,7 +249,7 @@
 
       <div class="section-title">Invoice Item</div>
       <label for="description">Description</label>
-      <input id="description" value="Monthly Rent - 2nd Floor" />
+      <input id="description" value="" placeholder="Default: Monthly Rent - [Period]" />
 
       <div class="row">
         <div>
@@ -340,6 +339,7 @@
   </div>
 
   <script>
+    // UPDATED: Descriptions removed from presets to trigger auto-generation
     const tenants = [
       {
         label: 'Custom / Manual Entry',
@@ -352,14 +352,14 @@
         label: 'W.I.S Accountancy',
         tenantName: 'W.I.S Accountancy',
         tenantAddress: 'Kandy',
-        description: 'Monthly Rent - 2nd Floor',
+        description: '', 
         amount: 250000
       },
       {
         label: 'Nils Clothing',
         tenantName: 'Nils Clothing',
         tenantAddress: 'Kandy',
-        description: 'Monthly Rent - Ground + 1st Floor',
+        description: '',
         amount: 255000
       }
     ];
@@ -401,12 +401,7 @@
 
     function formatDate(value) {
       if (!value) return '-';
-      const date = new Date(value + 'T00:00:00');
-      return date.toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric'
-      });
+      return value; 
     }
 
     function formatMoney(value, currency) {
@@ -463,7 +458,12 @@
         A/C No: ${accountNo}
       `;
 
-      document.getElementById('itemDescription').textContent = description;
+      // Auto-generated description logic remains active
+      const finalDescription = description.trim() !== "" 
+                               ? description 
+                               : `Monthly Rent - ${billingPeriod}`;
+
+      document.getElementById('itemDescription').textContent = finalDescription;
       document.getElementById('itemAmount').textContent = formatMoney(amount, currency);
       document.getElementById('subtotal').textContent = formatMoney(amount, currency);
       document.getElementById('total').textContent = formatMoney(amount, currency);
