@@ -76,6 +76,7 @@
     }
     .primary { background: #1f2937; color: white; }
     .secondary { background: #e5e7eb; color: #111827; }
+    .danger { background: #fee2e2; color: #991b1b; }
     .preview-wrap {
       background: #f9fafb;
       border: 1px solid #e5e7eb;
@@ -163,6 +164,37 @@
       line-height: 1.7;
       white-space: pre-line;
     }
+    .item-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+      background: #fafafa;
+    }
+    .item-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .item-card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #374151;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .item-remove-btn {
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+    .hint {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: -6px;
+      margin-bottom: 10px;
+    }
     @media print {
       @page { margin: 0; }
       body { margin: 0; background: white; }
@@ -247,19 +279,11 @@
         </div>
       </div>
 
-      <div class="section-title">Invoice Item</div>
-      <label for="description">Description</label>
-      <input id="description" value="" placeholder="Default: Monthly Rent - [Period]" />
-
-      <div class="row">
-        <div>
-          <label for="amount">Amount (LKR)</label>
-          <input id="amount" type="number" value="250000" />
-        </div>
-        <div>
-          <label for="currency">Currency Label</label>
-          <input id="currency" value="LKR" />
-        </div>
+      <div class="section-title">Invoice Items</div>
+      <div class="hint">Add or remove invoice items as needed. If a description is left blank, it will default to “Monthly Rent - [Billing Period]”.</div>
+      <div id="invoiceItemsContainer"></div>
+      <div class="btn-row">
+        <button type="button" class="secondary" id="addItemBtn">+ Add Item</button>
       </div>
 
       <div class="section-title">Payment Details</div>
@@ -312,12 +336,7 @@
                   <th>Amount</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr>
-                  <td id="itemDescription"></td>
-                  <td id="itemAmount"></td>
-                </tr>
-              </tbody>
+              <tbody id="invoiceItemsPreviewBody"></tbody>
             </table>
           </div>
 
@@ -339,7 +358,6 @@
   </div>
 
   <script>
-    // UPDATED: Descriptions removed from presets to trigger auto-generation
     const tenants = [
       {
         label: 'Custom / Manual Entry',
@@ -352,7 +370,7 @@
         label: 'W.I.S Accountancy',
         tenantName: 'W.I.S Accountancy',
         tenantAddress: 'Kandy',
-        description: '', 
+        description: '',
         amount: 250000
       },
       {
@@ -366,8 +384,7 @@
 
     const fields = [
       'landlordName','landlordAddress','landlordPhone','tenantName','tenantAddress',
-      'invoiceNo','invoiceDate','billingPeriod','dueDate','description','amount','currency',
-      'accountName','bankName','accountNo','note'
+      'invoiceNo','invoiceDate','billingPeriod','dueDate','accountName','bankName','accountNo','note'
     ];
 
     const defaultValues = {};
@@ -378,6 +395,10 @@
     });
 
     const tenantSelect = document.getElementById('tenantSelect');
+    const invoiceItemsContainer = document.getElementById('invoiceItemsContainer');
+    const invoiceItemsPreviewBody = document.getElementById('invoiceItemsPreviewBody');
+    const addItemBtn = document.getElementById('addItemBtn');
+
     tenants.forEach((tenant, index) => {
       const option = document.createElement('option');
       option.value = index;
@@ -389,19 +410,97 @@
       applyTenantPreset(Number(tenantSelect.value));
     });
 
+    addItemBtn.addEventListener('click', () => {
+      addInvoiceItem();
+      renderInvoice();
+    });
+
+    function createInvoiceItem(description = '', amount = '') {
+      return { description, amount };
+    }
+
+    function addInvoiceItem(description = '', amount = '') {
+      const itemIndex = invoiceItemsContainer.children.length + 1;
+      const card = document.createElement('div');
+      card.className = 'item-card';
+      card.innerHTML = `
+        <div class="item-card-header">
+          <div class="item-card-title">Item ${itemIndex}</div>
+          <button type="button" class="danger item-remove-btn">Remove</button>
+        </div>
+        <label>Description</label>
+        <input class="item-description" value="${escapeHtmlAttr(description)}" placeholder="Default: Monthly Rent - [Period]" />
+        <div class="row">
+          <div>
+            <label>Amount (LKR)</label>
+            <input class="item-amount" type="number" value="${escapeHtmlAttr(amount)}" />
+          </div>
+          <div>
+            <label>Currency Label</label>
+            <input class="item-currency" value="LKR" />
+          </div>
+        </div>
+      `;
+
+      const removeBtn = card.querySelector('.item-remove-btn');
+      removeBtn.addEventListener('click', () => {
+        if (invoiceItemsContainer.children.length === 1) {
+          card.querySelector('.item-description').value = '';
+          card.querySelector('.item-amount').value = '';
+          card.querySelector('.item-currency').value = 'LKR';
+        } else {
+          card.remove();
+          refreshItemHeadings();
+        }
+        renderInvoice();
+      });
+
+      card.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', renderInvoice);
+      });
+
+      invoiceItemsContainer.appendChild(card);
+      refreshItemHeadings();
+    }
+
+    function refreshItemHeadings() {
+      [...invoiceItemsContainer.querySelectorAll('.item-card-title')].forEach((title, index) => {
+        title.textContent = `Item ${index + 1}`;
+      });
+    }
+
+    function getInvoiceItems() {
+      return [...invoiceItemsContainer.querySelectorAll('.item-card')].map(card => ({
+        description: card.querySelector('.item-description').value,
+        amount: card.querySelector('.item-amount').value,
+        currency: card.querySelector('.item-currency').value || 'LKR'
+      }));
+    }
+
+    function setInvoiceItems(items) {
+      invoiceItemsContainer.innerHTML = '';
+      const safeItems = items && items.length ? items : [createInvoiceItem('', '')];
+      safeItems.forEach(item => addInvoiceItem(item.description || '', item.amount || ''));
+      [...invoiceItemsContainer.querySelectorAll('.item-currency')].forEach((input, index) => {
+        input.value = safeItems[index]?.currency || 'LKR';
+      });
+      renderInvoice();
+    }
+
     function applyTenantPreset(index) {
       const tenant = tenants[index];
       if (!tenant) return;
       document.getElementById('tenantName').value = tenant.tenantName || '';
       document.getElementById('tenantAddress').value = tenant.tenantAddress || '';
-      document.getElementById('description').value = tenant.description || '';
-      document.getElementById('amount').value = tenant.amount || '';
+      setInvoiceItems([
+        createInvoiceItem(tenant.description || '', tenant.amount || '')
+      ]);
       renderInvoice();
     }
 
     function formatDate(value) {
       if (!value) return '-';
-      return value; 
+      return value;
     }
 
     function formatMoney(value, currency) {
@@ -416,6 +515,19 @@
       return (text || '').replace(/\n/g, '<br>');
     }
 
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function escapeHtmlAttr(text) {
+      return escapeHtml(text ?? '');
+    }
+
     function renderInvoice() {
       const landlordName = document.getElementById('landlordName').value;
       const landlordAddress = document.getElementById('landlordAddress').value;
@@ -426,47 +538,58 @@
       const invoiceDate = document.getElementById('invoiceDate').value;
       const billingPeriod = document.getElementById('billingPeriod').value;
       const dueDate = document.getElementById('dueDate').value;
-      const description = document.getElementById('description').value;
-      const amount = document.getElementById('amount').value;
-      const currency = document.getElementById('currency').value || 'LKR';
       const accountName = document.getElementById('accountName').value;
       const bankName = document.getElementById('bankName').value;
       const accountNo = document.getElementById('accountNo').value;
       const note = document.getElementById('note').value;
+      const items = getInvoiceItems();
 
       document.getElementById('fromBlock').innerHTML = `
-        <strong>${landlordName}</strong><br>
-        ${linesToHtml(landlordAddress)}<br>
-        Contact: ${landlordPhone}
+        <strong>${escapeHtml(landlordName)}</strong><br>
+        ${linesToHtml(escapeHtml(landlordAddress))}<br>
+        Contact: ${escapeHtml(landlordPhone)}
       `;
 
       document.getElementById('invoiceMeta').innerHTML = `
-        <strong>Invoice No:</strong> ${invoiceNo}<br>
-        <strong>Invoice Date:</strong> ${formatDate(invoiceDate)}<br>
-        <strong>Billing Period:</strong> ${billingPeriod}<br>
-        <strong>Due Date:</strong> ${formatDate(dueDate)}
+        <strong>Invoice No:</strong> ${escapeHtml(invoiceNo)}<br>
+        <strong>Invoice Date:</strong> ${escapeHtml(formatDate(invoiceDate))}<br>
+        <strong>Billing Period:</strong> ${escapeHtml(billingPeriod)}<br>
+        <strong>Due Date:</strong> ${escapeHtml(formatDate(dueDate))}
       `;
 
       document.getElementById('toBlock').innerHTML = `
-        <strong>${tenantName}</strong><br>
-        ${linesToHtml(tenantAddress)}
+        <strong>${escapeHtml(tenantName)}</strong><br>
+        ${linesToHtml(escapeHtml(tenantAddress))}
       `;
 
       document.getElementById('paymentBlock').innerHTML = `
-        <strong>${accountName}</strong><br>
-        ${bankName}<br>
-        A/C No: ${accountNo}
+        <strong>${escapeHtml(accountName)}</strong><br>
+        ${escapeHtml(bankName)}<br>
+        A/C No: ${escapeHtml(accountNo)}
       `;
 
-      // Auto-generated description logic remains active
-      const finalDescription = description.trim() !== "" 
-                               ? description 
-                               : `Monthly Rent - ${billingPeriod}`;
+      let subtotalAmount = 0;
+      let subtotalCurrency = 'LKR';
+      invoiceItemsPreviewBody.innerHTML = '';
 
-      document.getElementById('itemDescription').textContent = finalDescription;
-      document.getElementById('itemAmount').textContent = formatMoney(amount, currency);
-      document.getElementById('subtotal').textContent = formatMoney(amount, currency);
-      document.getElementById('total').textContent = formatMoney(amount, currency);
+      items.forEach(item => {
+        const finalDescription = item.description.trim() !== ''
+          ? item.description
+          : `Monthly Rent - ${billingPeriod}`;
+        const numericAmount = Number(item.amount || 0);
+        subtotalAmount += numericAmount;
+        subtotalCurrency = item.currency || subtotalCurrency || 'LKR';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${escapeHtml(finalDescription)}</td>
+          <td>${escapeHtml(formatMoney(numericAmount, item.currency || 'LKR'))}</td>
+        `;
+        invoiceItemsPreviewBody.appendChild(row);
+      });
+
+      document.getElementById('subtotal').textContent = formatMoney(subtotalAmount, subtotalCurrency);
+      document.getElementById('total').textContent = formatMoney(subtotalAmount, subtotalCurrency);
       document.getElementById('footerNote').textContent = note;
     }
 
@@ -475,6 +598,7 @@
         document.getElementById(id).value = defaultValues[id];
       });
       tenantSelect.value = '0';
+      setInvoiceItems([createInvoiceItem('', 250000)]);
       renderInvoice();
     }
 
@@ -492,6 +616,7 @@
     document.getElementById('dueDate').value = `${dueY}-${dueM}-${dueD}`;
 
     tenantSelect.value = '0';
+    setInvoiceItems([createInvoiceItem('', 250000)]);
     renderInvoice();
   </script>
 </body>
